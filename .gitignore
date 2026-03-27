@@ -1,0 +1,10 @@
+# Bloquear todos los archivos .env en cualquier profundidad
+**/.env
+
+# Bloquear carpetas de compilación de Maven
+**/target/
+
+# Archivos de configuración de IDEs
+.idea/
+.vscode/
+*.iml
