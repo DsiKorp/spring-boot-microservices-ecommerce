@@ -8,8 +8,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=asdasd
-      - MONGO_INITDB_ROOT_PASSWORD=dfgsdfgsdg
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     volumes:
       - mongo_data:/data/db  # <--- ¡Aquí salvamos los datos!
 
@@ -22,7 +22,7 @@ services:
     environment:
       # Sobrescribimos la config de Spring para usar Docker
       # Fíjate: usamos 'mongodb' en lugar de 'localhost'
-      - SPRING_DATA_MONGODB_URI=mongodb://asdasd:dfgsdfgsdg@mongodb:27017/product-db?authSource=admin
+      - SPRING_DATA_MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:${MONGO_PORT}/${MONGO_DATABASE}?authSource=${MONGO_AUTH_DB}
     depends_on:
       - mongodb           # Espera a que la BD arranque primero
 

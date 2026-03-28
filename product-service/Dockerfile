@@ -12,11 +12,24 @@ COPY --from=builder /app/target/*.jar product.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "product.jar"]
 
+# docker compose up --build
 # docker compose up
+
+# -d para que corra en segundo plano
 # docker compose up -d
+
+# levanta solamente mongodb
 # docker compose up -d mongodb
+
+# down para y elimina los contenedores
 # docker compose down
-# docker compose down -v
 # docker image ls
 
+# -v elimina los volumenes asociados a docker compose,
+# borra la base de products
+# docker compose down -v
+
+# docker image ls
+
+# run proyect:
 # ./mvnw spring-boot:run
