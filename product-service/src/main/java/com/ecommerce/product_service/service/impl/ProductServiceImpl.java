@@ -27,7 +27,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = mapper.toProduct(requestDTO);
 
         Product savedProduct = productRepository.save(product);
-        log.info("Product {} guardado", savedProduct.getName());
+        log.info("Product {} saved", savedProduct.getName());
 
         return mapper.toProductResponseDTO(savedProduct);
     }
@@ -56,7 +56,7 @@ public class ProductServiceImpl implements ProductService {
         mapper.updateProductFromRequest(productRequest, product);
 
         Product updatedProduct = productRepository.save(product);
-        log.info("Product {} actualizado", updatedProduct.getName());
+        log.info("Product {} updated", updatedProduct.getName());
 
         return mapper.toProductResponseDTO(updatedProduct);
     }
@@ -69,6 +69,6 @@ public class ProductServiceImpl implements ProductService {
         }
 
         productRepository.deleteById(id);
-        log.info("Product con el id:{} fue eliminado", id);
+        log.info("Product with id:{} deleted", id);
     }
 }

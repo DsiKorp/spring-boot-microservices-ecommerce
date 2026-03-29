@@ -14,5 +14,11 @@ spring:
     username: ${MONGO_USERNAME}
     password: ${MONGO_PASSWORD}
     authentication-database: ${MONGO_AUTH_DB}
+  web:
+    error:
+      include-message: always
+      include-stacktrace: never
+      #que siempre vaya el message y que nunca vaya en la respuesta json el print stracTrace
 server:
   port: ${SERVER_PORT}
+
