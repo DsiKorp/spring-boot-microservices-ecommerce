@@ -106,10 +106,10 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</exclude>
-						<systemPropertyVariables>
-							<spring.config.import>optional:file:.env[.properties]</spring.config.import>
-						</systemPropertyVariables>
 					</excludes>
+					<systemPropertyVariables>
+						<spring.config.import>optional:file:.env[.properties]</spring.config.import>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 		</plugins>
