@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final WebClient.Builder webClientBuilder;
 
     @Override
     @Transactional
@@ -38,6 +40,25 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
         order.setOrderLineItemsList(orderLineItems);
+
+        for (var orderItem : order.getOrderLineItemsList()) {
+
+            Boolean isInStock = webClientBuilder.build()
+                    .get()
+                    .uri("http://localhost:8082/api/inventory/" + orderItem.getSku(), uriBuilder -> uriBuilder
+                            .queryParam("quantity", orderItem.getQuantity())
+                            .build())
+                    .retrieve() // retrieve para obtener la respuesta del servicio de inventario, como en
+                                // postman
+                    .bodyToMono(Boolean.class) // bodyToMono para obtener un solo valor booleano
+                    .block(); // block para esperar la respuesta de forma sincrónica
+
+            if (Boolean.FALSE.equals(isInStock)) {
+                throw new IllegalArgumentException(
+                        "El producto con SKU " + orderItem.getSku() + " no está disponible en stock.");
+            }
+
+        }
 
         // Guardamos y capturamos la entidad persistida
         Order savedOrder = orderRepository.save(order);
