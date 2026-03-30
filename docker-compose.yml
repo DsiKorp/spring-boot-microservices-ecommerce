@@ -1,0 +1,63 @@
+services:
+  # 1. El Servicio de Base de Datos
+  mongodb:
+    #image: mongo:7.0.4
+    image: mongo:8.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db  # <--- ¡Aquí salvamos los datos!
+
+  # 2. Nuestra Aplicación (Product Service)
+#  product-service:
+#    build: .              # Usa el Dockerfile de la carpeta actual
+#    container_name: product-service
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      # Sobrescribimos la config de Spring para usar Docker
+#      # Fíjate: usamos 'mongodb' en lugar de 'localhost'
+#      - SPRING_DATA_MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:${MONGO_PORT}/${MONGO_DATABASE}?authSource=${MONGO_AUTH_DB}
+#    depends_on:
+#      - mongodb           # Espera a que la BD arranque primero
+
+  #------------------ 3. Nuestra Aplicación (Inventory DB Mysql)
+  inventory-db:
+    image: mysql:latest
+    container_name: inventory-db-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - inventory_data:/var/lib/mysql
+
+
+  #----------------- 4. Nuestra Aplicación (Order DB Postgresql)
+  order-db:
+    image: postgres:latest
+    container_name: order-db-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data
+
+
+volumes:
+  mongo_data:             # Declaramos el volumen persistente
+  inventory_data:
+  order_data:
