@@ -16,14 +16,14 @@ public class OrderLineItemsRequest {
 
     // No ID (es creación)
 
-    @NotBlank(message = "El SKU es obligatorio")
+    @NotBlank(message = "The SKU is required")
     private String sku;
 
-    @NotNull(message = "El precio es obligatorio")
+    @NotNull(message = "The price is required")
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal price;
 
-    @NotNull(message = "La cantidad es obligatoria")
+    @NotNull(message = "The quantity is required")
     @Min(value = 1)
     private Integer quantity;
 }

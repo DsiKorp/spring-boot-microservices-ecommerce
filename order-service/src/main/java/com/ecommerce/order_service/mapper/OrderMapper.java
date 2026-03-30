@@ -14,7 +14,7 @@ public interface OrderMapper {
 
     // 1. De Request a Entidad
     // Mapeamos explícitamente la lista porque los nombres no coinciden
-    @Mapping(source = "orderLineItemsDtoList", target = "orderLineItemsList")
+    // @Mapping(source = "orderLineItemsDtoList", target = "orderLineItemsList")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "orderNumber", ignore = true)
     Order toOrder(OrderRequest orderRequest);
@@ -28,7 +28,7 @@ public interface OrderMapper {
 
     // 2. De Entidad a Response
     // Mapeamos explícitamente la lista de vuelta
-    @Mapping(source = "orderLineItemsList", target = "orderLineItemsDtoList")
+    // @Mapping(source = "orderLineItemsList", target = "orderLineItemsDtoList")
     OrderResponse toOrderResponse(Order order);
 
     // Método auxiliar para la respuesta
