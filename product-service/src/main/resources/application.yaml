@@ -20,5 +20,5 @@ spring:
       include-stacktrace: never
       #que siempre vaya el message y que nunca vaya en la respuesta json el print stracTrace
 server:
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT_PRODUCTS}
 
