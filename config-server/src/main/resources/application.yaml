@@ -1,8 +1,16 @@
 spring:
   application:
     name: config-server
-  threads:
-    virtual:
-      enabled: true
+  cloud:
+    config:
+      server:
+        git:
+          uri: file://${HOME}/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
+          #uri: file:///home/dsikorp/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
+          clone-on-start: true
+          default-label: main
+#  threads:
+#    virtual:
+#      enabled: true
 server:
   port: ${SERVER_PORT_CONFIG_SERVER}
