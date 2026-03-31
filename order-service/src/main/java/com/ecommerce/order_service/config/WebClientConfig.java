@@ -1,6 +1,7 @@
 package com.ecommerce.order_service.config;
 
 import com.ecommerce.order_service.service.client.InventoryClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,6 +11,9 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration
 public class WebClientConfig {
 
+    @Value("${inventory.service.url}")
+    private String inventoryServiceUrl;
+
 //    @Bean
 //    public WebClient.Builder webClientBuilder() {
 //        return WebClient.builder();
@@ -17,7 +21,7 @@ public class WebClientConfig {
 
     @Bean
     public WebClient webClientBuilder() {
-        return WebClient.builder().baseUrl("http://localhost:8082").build();
+        return WebClient.builder().baseUrl(inventoryServiceUrl).build();
     }
 
     @Bean

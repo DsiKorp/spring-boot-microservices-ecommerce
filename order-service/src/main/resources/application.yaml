@@ -24,7 +24,7 @@ spring:
 server:
   port: ${SERVER_PORT_ORDER}
 
-#inventory:
-#  service:
-#    url: http://localhost:8082
+inventory:
+  service:
+    url: ${SERVER_URL_INVENTORY}
 
