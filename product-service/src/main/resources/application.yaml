@@ -1,24 +1,6 @@
 spring:
   application:
     name: product-service
-  threads:
-    virtual:
-      enabled: true
-  mongodb:
-#    uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}?authSource=${MONGO_AUTH_DB}
-#    database: ${MONGO_DATABASE}
-    # Sintaxis: ${NOMBRE_VAR_ENTORNO : VALOR_POR_DEFECTO}
-    host: ${MONGO_HOST}
-    port: ${MONGO_PORT}
-    database: ${MONGO_DATABASE}
-    username: ${MONGO_USERNAME}
-    password: ${MONGO_PASSWORD}
-    authentication-database: ${MONGO_AUTH_DB}
-  web:
-    error:
-      include-message: always
-      include-stacktrace: never
-      #que siempre vaya el message y que nunca vaya en la respuesta json el print stracTrace
-server:
-  port: ${SERVER_PORT_PRODUCTS}
+  config:
+    import: optional:configserver:${SERVER_URL_CONFIG_SERVER}/
 
