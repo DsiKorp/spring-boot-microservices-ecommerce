@@ -1,14 +1,18 @@
 spring:
   application:
     name: config-server
+  profiles:
+    active: native  # <--- Esto desactiva la búsqueda de Git
   cloud:
     config:
       server:
-        git:
-          uri: file://${HOME}/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
-          #uri: file:///home/dsikorp/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
-          clone-on-start: true
-          default-label: main
+        native:
+          search-locations: file://${HOME}/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
+#        git:
+#          uri: file://${HOME}/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
+#          #uri: file:///home/dsikorp/Documents/DocumentsLinux/Code/Java/Spring Boot 4 Arquitectura de Microservicios/ecommerce/spring-boot-microservices-ecommerce/config-data
+#          clone-on-start: true
+#          default-label: main
 #  threads:
 #    virtual:
 #      enabled: true
