@@ -17,6 +17,17 @@ spring:
       include-message: always
       include-stacktrace: never
       #que siempre vaya el message y que nunca vaya en la respuesta json el print stracTrace
+# variables de entorno, nada que ver con spring boot
+app:
+  maintenance:
+    message: ${MAINTENANCE_MESSAGE}
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        # incluye endpoints por defecto
+        include: "refresh, health"
 server:
   port: ${SERVER_PORT_PRODUCTS}
 
