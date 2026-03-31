@@ -1,3 +1,8 @@
 spring:
   application:
     name: config-server
+  threads:
+    virtual:
+      enabled: true
+server:
+  port: ${SERVER_PORT_CONFIG_SERVER}
