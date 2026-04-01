@@ -17,6 +17,10 @@ spring:
       include-message: always
       include-stacktrace: never
       #que siempre vaya el message y que nunca vaya en la respuesta json el print stracTrace
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
 # variables de entorno, nada que ver con spring boot
 app:
   maintenance:
