@@ -16,7 +16,7 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
   # Variable ejemplo actuator
   inventory:
-    allow-backorder: false
+    allow-back-orders: false
   # actuator
   management:
     endpoints:
