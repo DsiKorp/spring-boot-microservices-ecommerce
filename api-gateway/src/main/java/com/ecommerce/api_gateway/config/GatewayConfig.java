@@ -13,16 +13,13 @@ public class GatewayConfig {
         return builder.routes()
                 .route("product-service", r -> r
                         .path("/api/v1/product/**")
-                        .uri("lb://SPRING-CONFIG"))
-                        //.uri("lb://PRODUCT-SERVICE"))
+                        .uri("lb://PRODUCT-SERVICE"))
                 .route("inventory-service", r -> r
                         .path("/api/v1/inventory/**")
-                        .uri("lb://SPRING-CONFIG"))
-                //.uri("lb://INVENTORY-SERVICE"))
+                        .uri("lb://INVENTORY-SERVICE"))
                 .route("order-service", r -> r
                         .path("/api/v1/order/**")
-                        .uri("lb://SPRING-CONFIG"))
-                //.uri("lb://ORDER-SERVICE"))
+                        .uri("lb://ORDER-SERVICE"))
                 .build();
     }
 }
