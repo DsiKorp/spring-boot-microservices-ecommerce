@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: inventory-service
   threads:
     virtual:
       enabled: true

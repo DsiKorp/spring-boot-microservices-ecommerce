@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: order-service
   # 🚀 Java 21 Performance
   threads:
     virtual:
