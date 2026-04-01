@@ -16,8 +16,10 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 eureka:
   client:
-    service-url:
+    serviceUrl:
       defaultZone: ${EUREKA_URL}
+    fetchRegistry: true
+    registerWithEureka: true
 # Variable ejemplo actuator
 inventory:
   allow-back-orders: false

@@ -3,9 +3,3 @@ spring:
     name: inventory-service
   config:
     import: optional:configserver:${SERVER_URL_CONFIG_SERVER}/
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,refresh

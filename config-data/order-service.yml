@@ -19,8 +19,10 @@ spring:
         "[dialect]": org.hibernate.dialect.PostgreSQLDialect
 eureka:
   client:
-    service-url:
+    serviceUrl:
       defaultZone: ${EUREKA_URL}
+    fetchRegistry: true
+    registerWithEureka: true
 order:
   enabled: true
 management:
