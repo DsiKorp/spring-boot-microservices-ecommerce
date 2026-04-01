@@ -14,5 +14,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+  # Variable ejemplo actuator
+  inventory:
+    allow-backorder: false
+  # actuator
+  management:
+    endpoints:
+      web:
+        exposure:
+          # incluye endpoints por defecto
+          include: "refresh, health"
 server:
   port: ${SERVER_PORT_INVENTORY}
