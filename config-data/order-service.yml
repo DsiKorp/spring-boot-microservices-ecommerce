@@ -18,6 +18,15 @@ spring:
         "[format_sql]": true
         "[dialect]": org.hibernate.dialect.PostgreSQLDialect
 
+order:
+  enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        # incluye endpoints por defecto
+        include: "refresh, health"
+
 server:
   port: ${SERVER_PORT_ORDER}
 
