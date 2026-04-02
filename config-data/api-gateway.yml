@@ -3,9 +3,47 @@ spring:
     name: api-gateway
   security:
     oauth2:
+      # 1. Configuración de CLIENTE (Necesaria para TokenRelay)
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI}
+        registration:
+          api-gateway-client:
+            provider: keycloak
+            client-id: api-gateway-client
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}  # <--- ¡REEMPLAZA ESTO CON TU CÓDIGO!
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
+            scope: openid
+      # 2. Configuración de SERVIDOR (Necesaria para validar entrada)
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI}
+    cloud:
+      gateway:
+        # 3. Filtro Global: Pasa el token a TODOS los microservicios
+        default-filters:
+          - TokenRelay
+
+        routes:
+          # Ruta a Microservicio de Productos
+          - id: product-service
+            uri: lb://product-service
+            predicates:
+              - Path=/api/v1/product/**
+
+          # Ruta a Microservicio de Órdenes
+          - id: order-service
+            uri: lb://order-service
+            predicates:
+              - Path=/api/v1/order/**
+
+          # Ruta a Microservicio de Inventario
+          - id: inventory-service
+            uri: lb://inventory-service
+            predicates:
+              - Path=/api/v1/inventory/**
 eureka:
   client:
     serviceUrl:
