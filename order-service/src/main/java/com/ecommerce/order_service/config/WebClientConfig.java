@@ -35,7 +35,6 @@ public class WebClientConfig {
     InventoryClient inventoryClient(WebClient.Builder builder) {
         WebClient webClient = builder.baseUrl(inventoryServiceUrl).build();
 
-
         // crear un adaptador para poder usar WebClient como cliente de servicio
         // WebClientAdapter es el que sabe como ejecutar la petición utilizando webClient
         WebClientAdapter adapter = WebClientAdapter.create(webClient);

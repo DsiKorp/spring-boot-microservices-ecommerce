@@ -95,6 +95,11 @@
 			<version>4.5.14</version>
 			<scope>compile</scope>
 		</dependency>
+		<!-- loadbalancer-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

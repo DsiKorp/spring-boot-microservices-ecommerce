@@ -56,8 +56,45 @@ services:
     volumes:
       - order_data:/var/lib/postgresql/data
 
+#-------------------------- Authentication Service
+  keycloak-db:
+    image: postgres:17.1-alpine
+    container_name: keycloak-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_LOGIN}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_LOGIN}
+      POSTGRES_DB: ${POSTGRES_DB_LOGIN}
+    ports:
+      - "5433:5432"
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_LOGIN} -d ${POSTGRES_DB_LOGIN}"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+  #--------------------------  Keycloak Service
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: keycloak
+    command: start-dev # Modo desarrollo (rápido y sin HTTPS obligatorio)
+    environment:
+      KC_DB: postgres # Vendor de la base de datos
+      KC_DB_URL: jdbc:postgresql://${POSTGRES_DB_LOGIN}:5432/${POSTGRES_DB_LOGIN}
+      KC_DB_USERNAME: ${POSTGRES_USER_LOGIN}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD_LOGIN}
+      # Credenciales del Super Admin (Para entrar a la consola ya mismo)
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak-db
 
 volumes:
   mongo_data:             # Declaramos el volumen persistente
   inventory_data:
   order_data:
+  keycloak_data:
