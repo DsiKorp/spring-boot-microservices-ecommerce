@@ -3,5 +3,8 @@ spring:
     name: product-service
   config:
     import: optional:configserver:${SERVER_URL_CONFIG_SERVER}/
-
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot.autoconfigure.mongo: DEBUG
 
