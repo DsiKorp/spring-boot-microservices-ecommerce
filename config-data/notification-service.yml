@@ -6,11 +6,26 @@ spring:
     port: 5672
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${MAIL_TRAP_USER} # <--- Pega tu usuario aquí
+    password: ${MAIL_TRAP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_URL}
     fetchRegistry: true
     registerWithEureka: true
+logging:
+  level:
+    root: INFO
+    com.ecommerce: INFO
 server:
   port: ${SERVER_PORT_NOTIFICATION}

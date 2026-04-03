@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="NotificationServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+  <configuration default="false" name="NotificationServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false" nameIsGenerated="true">
     <option name="envFilePaths">
       <option value="$PROJECT_DIR$/.env" />
     </option>
@@ -8,6 +8,7 @@
       <option name="environmentVariables" />
     </selectedOptions>
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.ecommerce.notification_service.NotificationServiceApplication" />
+    <option name="VM_PARAMETERS" value="-Dserver.port=0 -Deureka.instance.instance-id=${spring.application.name}:${random.uuid}" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
       <option name="IS_SUBST" value="false" />

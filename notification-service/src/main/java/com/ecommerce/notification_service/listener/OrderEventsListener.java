@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderEventsListener {
 
-
-
     @RabbitListener(queues = "notification-queue")
     public void handleOrderPlacedEvent(OrderPlacedEvent orderPlacedEvent) {
         log.info("OrderPlacedEvent received: {}", orderPlacedEvent);
@@ -18,11 +16,11 @@ public class OrderEventsListener {
 
         orderPlacedEvent.items().forEach( item -> {
             try {
-                 log.info("Sending confirm email to: {}, Order {}", orderPlacedEvent.email(), orderPlacedEvent.orderNumber());
+                 log.info("✅\u200B Sending confirm email to: {}, Order {}", orderPlacedEvent.email(), orderPlacedEvent.orderNumber());
 
-                 log.info("email to: {}, was sent successfully", orderPlacedEvent.email());
+                 log.info("✅\u200B email to: {}, was sent successfully", orderPlacedEvent.email());
             } catch (Exception e) {
-                log.error("\u274C Error sending email: {}: {}", item.sku(), e.getMessage());
+                log.error("❌\u200B Error sending email: {}: {}", item.sku(), e.getMessage());
             }
         });
     }
