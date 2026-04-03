@@ -43,7 +43,17 @@ management:
     web:
       exposure:
         # incluye endpoints por defecto
-        include: "refresh, health"
+        include: "refresh, health, circuitbreakers"
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
 
 server:
   port: ${SERVER_PORT_ORDER}
