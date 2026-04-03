@@ -19,11 +19,11 @@ public record OrderPlacedEvent(
 
         // 1. Crear los items (Usando el constructor del record interno)
         // Fíjate que se accede como: OrderPlacedEvent.OrderItemEvent
-        var item1 = new OrderPlacedEvent.OrderItemEvent("iphone-15", "1200.00", 1);
-        var item2 = new OrderPlacedEvent.OrderItemEvent("macbook-pro", "2500.00", 2);
+        var item1 = new OrderPlacedEvent.OrderItemEvent("iphone_15", "1200.00", 1);
+        var item2 = new OrderPlacedEvent.OrderItemEvent("macbook_a4", "2500.00", 2);
 
         // 2. Crear el evento principal con la lista de items
-        var evento = new OrderPlacedEvent("ORD-12345", "gabriel@test.com",
+        var evento = new OrderPlacedEvent("ORD-12345", "jota@test.com",
                 List.of(item1, item2));
 
         // 3. Imprimir (Los records tienen un toString() hermoso por defecto)

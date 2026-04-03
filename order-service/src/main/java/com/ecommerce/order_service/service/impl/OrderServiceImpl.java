@@ -2,6 +2,7 @@ package com.ecommerce.order_service.service.impl;
 
 import com.ecommerce.order_service.dto.OrderRequest;
 import com.ecommerce.order_service.dto.OrderResponse;
+import com.ecommerce.order_service.event.OrderPlacedEvent;
 import com.ecommerce.order_service.exception.ResourceNotFoundException;
 import com.ecommerce.order_service.mapper.OrderMapper;
 import com.ecommerce.order_service.model.Order;
@@ -14,6 +15,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 //import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
@@ -34,7 +36,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     //private final WebClient.Builder webClientBuilder;
-    private final InventoryClient inventoryClient;
+    //private final InventoryClient inventoryClient;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value( "${orders.enabled:true}")
     private boolean ordersEnabled;
@@ -57,8 +60,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    @CircuitBreaker(name = "inventory", fallbackMethod = "placeOrderFallback")
-    @Retry(name = "inventory")
+//    @CircuitBreaker(name = "inventory", fallbackMethod = "placeOrderFallback")
+//    @Retry(name = "inventory")
     //@TimeLimiter(name = "inventory")
     public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
 
@@ -81,20 +84,32 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderLineItemsList(orderLineItems);
             order.setUserId(userId);
 
-            for (var orderItem : order.getOrderLineItemsList()) {
-                try {
-                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
-
-                } catch (Exception e) {
-                    log.error("Error reducing inventory, product {}: {}", orderItem.getSku(), e.getMessage());
-                    throw new IllegalArgumentException("Order processing error: " + e.getMessage());
-                }
-
-            }
+//            for (var orderItem : order.getOrderLineItemsList()) {
+//                try {
+//                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
+//
+//                } catch (Exception e) {
+//                    log.error("Error reducing inventory, product {}: {}", orderItem.getSku(), e.getMessage());
+//                    throw new IllegalArgumentException("Order processing error: " + e.getMessage());
+//                }
+//            }
 
             // Guardamos y capturamos la entidad persistida
             Order savedOrder = orderRepository.save(order);
             log.info("Order saved successfully. ID: {}", savedOrder.getId());
+
+            List<OrderPlacedEvent.OrderItemEvent> orderItemsEvents =
+                    order.getOrderLineItemsList().stream()
+                            .map(item -> new OrderPlacedEvent.OrderItemEvent(
+                                    item.getSku(), item.getPrice().toString(), item.getQuantity()
+                            )).toList();
+
+            OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(
+                    savedOrder.getOrderNumber(), orderRequest.getEmail(), orderItemsEvents
+            );
+
+            rabbitTemplate.convertAndSend("order-events", orderPlacedEvent);
+            log.info("Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
 
             return orderMapper.toOrderResponse(savedOrder);
 
