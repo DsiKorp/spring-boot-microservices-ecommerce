@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URL}
+    fetchRegistry: true
+    registerWithEureka: true
+server:
+  port: ${SERVER_PORT_NOTIFICATION}

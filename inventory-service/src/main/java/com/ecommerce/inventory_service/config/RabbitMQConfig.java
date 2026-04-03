@@ -30,7 +30,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding binding(Queue inventoryQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(inventoryQueue).to(orderEventsExchange).with("order.placed"); //order.#
+        return BindingBuilder.bind(inventoryQueue).to(orderEventsExchange).with("order.placed");
     }
 
 

@@ -108,7 +108,7 @@ public class OrderServiceImpl implements OrderService {
                     savedOrder.getOrderNumber(), orderRequest.getEmail(), orderItemsEvents
             );
 
-            rabbitTemplate.convertAndSend("order-events", orderPlacedEvent);
+            rabbitTemplate.convertAndSend("order-events", "order.placed", orderPlacedEvent);
             log.info("Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
 
             return orderMapper.toOrderResponse(savedOrder);
