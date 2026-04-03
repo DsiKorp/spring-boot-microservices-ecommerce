@@ -117,6 +117,18 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
 		</dependency>
+		<!-- resilience4j-->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<!-- aop verifica el circuito -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+			<version>3.3.0</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

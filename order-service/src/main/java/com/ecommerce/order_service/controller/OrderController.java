@@ -27,14 +27,14 @@ public class OrderController {
         return orderService.placeOrder(orderRequest, jwt.getSubject());
     }
 
-    @GetMapping
+    @GetMapping("/ord")
     @ResponseStatus(HttpStatus.OK)
     public List<OrderResponse> getAllOrders() {
         return orderService.getAllOrders();
     }
 
 
-    @GetMapping("/ord")
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<OrderResponse> getOrders(@AuthenticationPrincipal Jwt jwt) {
 

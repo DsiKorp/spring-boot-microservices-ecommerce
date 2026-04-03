@@ -31,8 +31,11 @@ public class SecurityConfig {
                         .pathMatchers("/api/v1/product/**").hasRole(Role.ADMIN.name())  // .hasAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1/inventory/**").hasRole(Role.ADMIN.name())  // .hasAuthority("ROLE_ADMIN")
 
-                        .pathMatchers(HttpMethod.POST, "/api/v1/order/ord/**").hasAnyRole(Role.USER.name(), Role.ADMIN.name())  // .hasAuthority("ROLE_USER")
+                        .pathMatchers("/api/v1/order/ord/**").hasRole(Role.ADMIN.name())  // .hasAuthority("ROLE_ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/order/**").hasAnyRole(Role.USER.name(), Role.ADMIN.name())  // .hasAuthority("ROLE_USER")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/order/**").hasAnyRole(Role.USER.name(), Role.ADMIN.name())
                         .pathMatchers("/api/v1/order/**").hasRole(Role.ADMIN.name())  // .hasAuthority("ROLE_ADMIN")
+
                         .anyExchange().authenticated()
                 ) // {} habilita la autoconfiguración
                 .oauth2ResourceServer(oauth2 -> oauth2
