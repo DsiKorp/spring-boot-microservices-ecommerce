@@ -33,6 +33,12 @@ eureka:
 order:
   enabled: true
 management:
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
   endpoints:
     web:
       exposure:
