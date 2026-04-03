@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="NotificationServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
     <option name="envFilePaths">
-      <option value="$PROJECT_DIR$/../microservices-ecommerce/.env" />
+      <option value="$PROJECT_DIR$/.env" />
     </option>
     <module name="notification-service" />
     <selectedOptions>
