@@ -75,11 +75,12 @@ services:
 #      timeout: 5s
 #      retries: 5
 
-  #--------------------------  Keycloak Service
+  #--------------------------  Keycloak
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.0
     container_name: keycloak
     command: start-dev # Modo desarrollo (rápido y sin HTTPS obligatorio)
+    restart: always
     environment:
       KC_DB: postgres # Vendor de la base de datos
       KC_DB_URL: jdbc:postgresql://${POSTGRES_DB_LOGIN}:5432/${POSTGRES_DB_LOGIN}
@@ -92,9 +93,23 @@ services:
       - "8080:8080"
     depends_on:
       - keycloak-db
-
+  #--------------------------  RabbitMq
+  rabbitmq:
+    #image: rabbitmq:3-management
+    image: rabbitmq:4.2-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Puerto para comunicación entre microservicios
+      - "15672:15672" # Puerto para la consola de gestión web
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # <--- ¡La persistencia!
 volumes:
   mongo_data:             # Declaramos el volumen persistente
   inventory_data:
   order_data:
   keycloak_data:
+  rabbitmq_data:
