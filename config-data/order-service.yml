@@ -54,7 +54,13 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
-
+  retry:
+    instances:
+      inventory:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
 server:
   port: ${SERVER_PORT_ORDER}
 
