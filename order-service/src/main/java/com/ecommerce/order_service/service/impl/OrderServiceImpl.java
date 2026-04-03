@@ -10,6 +10,7 @@ import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.service.OrderService;
 import com.ecommerce.order_service.service.client.InventoryClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,13 +40,15 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse placeOrderFallback(OrderRequest orderRequest, String userId, Throwable throwable) {
         log.error("\uD83D\uDD34 Circuit Breaker activated. Cause: {}", throwable.getMessage());
 
-        return new OrderResponse(0L, "00000", Collections.emptyList());
+        //return new OrderResponse(0L, "00000", Collections.emptyList());
+        throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
     }
 
 
     @Override
     @Transactional
     @CircuitBreaker(name = "inventory", fallbackMethod = "placeOrderFallback")
+    @Retry(name = "inventory")
     public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
 
         if (!ordersEnabled) {
