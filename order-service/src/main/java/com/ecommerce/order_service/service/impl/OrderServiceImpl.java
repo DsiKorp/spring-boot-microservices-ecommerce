@@ -11,6 +11,7 @@ import com.ecommerce.order_service.service.OrderService;
 import com.ecommerce.order_service.service.client.InventoryClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -37,11 +39,14 @@ public class OrderServiceImpl implements OrderService {
     @Value( "${orders.enabled:true}")
     private boolean ordersEnabled;
 
-    public OrderResponse placeOrderFallback(OrderRequest orderRequest, String userId, Throwable throwable) {
-        log.error("\uD83D\uDD34 Circuit Breaker activated. Cause: {}", throwable.getMessage());
+    // CompletableFuture crea asincronismo para ejecutar en un hilo separado
+    public  CompletableFuture<OrderResponse> placeOrderFallback(OrderRequest orderRequest, String userId, Throwable throwable) {
+        return CompletableFuture.supplyAsync(() -> {
+            log.error("\uD83D\uDD34 Circuit Breaker activated. Cause: {}", throwable.getMessage());
 
-        //return new OrderResponse(0L, "00000", Collections.emptyList());
-        throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
+            //return new OrderResponse(0L, "00000", Collections.emptyList());
+            throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
+        });
     }
 
 
@@ -49,27 +54,32 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @CircuitBreaker(name = "inventory", fallbackMethod = "placeOrderFallback")
     @Retry(name = "inventory")
-    public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
+    @TimeLimiter(name = "inventory")
+    public CompletableFuture<OrderResponse> placeOrder(OrderRequest orderRequest, String userId) {
 
-        if (!ordersEnabled) {
-            log.warn("Order rejected: Service disabled by configuration");
-            throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
-        }
+        long startTime = System.currentTimeMillis();
+        log.info("Order received. Time: {}", startTime);
 
-        log.info("Placing new order...");
+        return CompletableFuture.supplyAsync(() -> {
+            if (!ordersEnabled) {
+                log.warn("Order rejected: Service disabled by configuration");
+                throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
+            }
 
-        // Mapeo manual de items para asegurar la lista
-        List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsList()
-                .stream()
-                .map(orderMapper::toOrderLineItems)
-                .toList();
+            log.info("Placing new order...");
 
-        Order order = new Order();
-        order.setOrderNumber(UUID.randomUUID().toString());
-        order.setOrderLineItemsList(orderLineItems);
-        order.setUserId(userId);
+            // Mapeo manual de items para asegurar la lista
+            List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsList()
+                    .stream()
+                    .map(orderMapper::toOrderLineItems)
+                    .toList();
 
-        for (var orderItem : order.getOrderLineItemsList()) {
+            Order order = new Order();
+            order.setOrderNumber(UUID.randomUUID().toString());
+            order.setOrderLineItemsList(orderLineItems);
+            order.setUserId(userId);
+
+            for (var orderItem : order.getOrderLineItemsList()) {
 
 //            Boolean isInStock = webClientBuilder.build()
 //                    .get()
@@ -86,7 +96,7 @@ public class OrderServiceImpl implements OrderService {
 //                        "El producto con SKU " + orderItem.getSku() + " no está disponible en stock.");
 //            }
 
-            try {
+                try {
 //                String reducerResponse = webClientBuilder.build()
 //                        .put()
 //                        .uri("http://localhost:8082/api/v1/inventory/reduce/" + orderItem.getSku(), uriBuilder -> uriBuilder
@@ -98,20 +108,29 @@ public class OrderServiceImpl implements OrderService {
 //
 //                log.info("Inventory reduced for product {}: {}", orderItem.getSku(), reducerResponse);
 
-                inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
+                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
 
-            } catch (Exception e) {
-                log.error("Error reducing inventory, product {}: {}", orderItem.getSku(), e.getMessage());
-                throw new IllegalArgumentException("Order processing error: " + e.getMessage());
+                } catch (Exception e) {
+                    log.error("Error reducing inventory, product {}: {}", orderItem.getSku(), e.getMessage());
+                    throw new IllegalArgumentException("Order processing error: " + e.getMessage());
+                }
+
             }
 
-        }
+            long totalTime = System.currentTimeMillis() - startTime;
+            log.info("Order placed. TotalTime: {} ms", totalTime);
 
-        // Guardamos y capturamos la entidad persistida
-        Order savedOrder = orderRepository.save(order);
-        log.info("Order saved successfully. ID: {}", savedOrder.getId());
+            if (totalTime > 3000) {
+                log.error("Order timed out. TotalTime: {} ms", totalTime);
+                throw new RuntimeException("Exceded timed out - Manual Rollback: " + totalTime);
+            }
 
-        return orderMapper.toOrderResponse(savedOrder);
+            // Guardamos y capturamos la entidad persistida
+            Order savedOrder = orderRepository.save(order);
+            log.info("Order saved successfully. ID: {}", savedOrder.getId());
+
+            return orderMapper.toOrderResponse(savedOrder);
+        });
     }
 
     @Override
