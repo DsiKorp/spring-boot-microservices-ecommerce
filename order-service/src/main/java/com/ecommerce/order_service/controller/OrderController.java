@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+//import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/v1/order") // Versionado v1
@@ -23,7 +23,8 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CompletableFuture<OrderResponse> placeOrder(@Valid @RequestBody OrderRequest orderRequest,
+    // CompletableFuture<OrderResponse>
+    public OrderResponse placeOrder(@Valid @RequestBody OrderRequest orderRequest,
                                                        @AuthenticationPrincipal Jwt jwt) {
         return orderService.placeOrder(orderRequest, jwt.getSubject());
     }
