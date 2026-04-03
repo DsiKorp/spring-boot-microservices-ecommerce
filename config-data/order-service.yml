@@ -61,11 +61,11 @@ resilience4j:
         waitDuration: 2s
         enableExponentialBackoff: true
         exponentialBackoffMultiplier: 2
-  timelimiter:
-    instances:
-      inventory:
-        timeoutDuration: 3s
-        cancelRunningFuture: true
+#  timelimiter:
+#    instances:
+#      inventory:
+#        timeoutDuration: 3s
+#        cancelRunningFuture: true
 server:
   port: ${SERVER_PORT_ORDER}
 
