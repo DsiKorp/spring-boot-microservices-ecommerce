@@ -7,6 +7,7 @@ import com.ecommerce.order_service.exception.ResourceNotFoundException;
 import com.ecommerce.order_service.mapper.OrderMapper;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderLineItems;
+import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.service.OrderService;
 import com.ecommerce.order_service.service.client.InventoryClient;
@@ -81,9 +82,11 @@ public class OrderServiceImpl implements OrderService {
 
             Order order = new Order();
             order.setOrderNumber(UUID.randomUUID().toString());
+            order.setStatus(OrderStatus.PLACED);
             order.setOrderLineItemsList(orderLineItems);
             order.setUserId(userId);
 
+            // se quito por uso de RabbitMQ
 //            for (var orderItem : order.getOrderLineItemsList()) {
 //                try {
 //                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
