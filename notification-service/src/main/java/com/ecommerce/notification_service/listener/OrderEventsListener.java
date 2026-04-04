@@ -29,10 +29,13 @@ public class OrderEventsListener {
         message.setSubject("Order Confirmation: " + orderPlacedEvent.orderNumber());
 
         StringBuilder emailBody = new StringBuilder();
-        emailBody.append("Hello!\n\n");
-        emailBody.append("Your order number is: ").append(orderPlacedEvent.orderNumber()).append("\n\n");
-        emailBody.append("Order Details:\n");
-        emailBody.append("─────────────────────────────────\n");
+        emailBody.append("🎉 Thank you for your purchase!\n\n");
+        emailBody.append("Dear Customer,\n\n");
+        emailBody.append("We are pleased to confirm that your order has been received successfully.\n\n");
+        emailBody.append("📦 Order Number: ").append(orderPlacedEvent.orderNumber()).append("\n\n");
+        emailBody.append("═══════════════════════════════════════\n");
+        emailBody.append("           🛒 ORDER DETAILS\n");
+        emailBody.append("═══════════════════════════════════════\n\n");
 
         BigDecimal orderTotal = BigDecimal.ZERO;
         int itemNumber = 1;
@@ -42,16 +45,23 @@ public class OrderEventsListener {
             BigDecimal subtotal = price.multiply(BigDecimal.valueOf(item.quantity()));
             orderTotal = orderTotal.add(subtotal);
 
-            emailBody.append(String.format("%d. %s\n", itemNumber++, item.sku()));
-            emailBody.append(String.format("   Quantity: %d\n", item.quantity()));
-            emailBody.append(String.format("   Price: $%s\n", item.price()));
-            emailBody.append(String.format("   Subtotal: $%s\n\n", subtotal));
+            emailBody.append(String.format("  ✨ Item #%d: %s\n", itemNumber++, item.sku()));
+            emailBody.append(String.format("     📦 Quantity: %d\n", item.quantity()));
+            emailBody.append(String.format("     💰 Unit Price: $%s\n", item.price()));
+            emailBody.append(String.format("     💵 Subtotal: $%s\n\n", subtotal));
         }
 
-        emailBody.append("─────────────────────────────────\n");
-        emailBody.append(String.format("TOTAL: $%s\n\n", orderTotal));
-        emailBody.append("Thank you for your order!\n");
-        emailBody.append("DskLabs");
+        emailBody.append("═══════════════════════════════════════\n");
+        emailBody.append(String.format("  💳 TOTAL AMOUNT: $%s\n", orderTotal));
+        emailBody.append("═══════════════════════════════════════\n\n");
+        emailBody.append("📮 We will keep you updated on your shipping status.\n\n");
+        emailBody.append("If you have any questions, please do not hesitate to contact us.\n\n");
+        emailBody.append("🙏 Thank you for choosing us!\n\n");
+        emailBody.append("Best regards,\n");
+        emailBody.append("═══════════════════════════════════════\n");
+        emailBody.append("  🏢 DskLabs - Your Trusted Store\n");
+        emailBody.append("  📧 support@dsklabs.com\n");
+        emailBody.append("═══════════════════════════════════════\n");
 
         message.setText(emailBody.toString());
 

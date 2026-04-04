@@ -1,0 +1,31 @@
+spring:
+#  application:
+#    name: notification-service
+#  rabbitmq:
+#    host: localhost
+#    port: 5672
+#    username: ${RABBITMQ_USERNAME}
+#    password: ${RABBITMQ_PASSWORD}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USER} # <--- Pega tu usuario aquí
+    password: ${GMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+#eureka:
+#  client:
+#    serviceUrl:
+#      defaultZone: ${EUREKA_URL}
+#    fetchRegistry: true
+#    registerWithEureka: true
+#logging:
+#  level:
+#    root: INFO
+#    com.ecommerce: INFO
+#server:
+#  port: ${SERVER_PORT_NOTIFICATION}
