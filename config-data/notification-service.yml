@@ -1,6 +1,8 @@
 spring:
   application:
     name: notification-service
+  profiles:
+    active: prod
   rabbitmq:
     host: localhost
     port: 5672
