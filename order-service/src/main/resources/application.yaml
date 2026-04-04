@@ -3,3 +3,5 @@ spring:
     name: order-service
   config:
     import: optional:configserver:${SERVER_URL_CONFIG_SERVER}/
+
+# docker exec -it order-db-postgres psql -U admin -d order_db
