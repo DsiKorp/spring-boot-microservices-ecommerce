@@ -1,5 +1,6 @@
 package com.ecommerce.inventory_service.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@Slf4j
 public class RabbitMQConfig {
 
     // En vez de utilizar serialización java, se utiliza Jackson para convertir objetos a JSON
@@ -30,6 +32,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding binding(Queue inventoryQueue, TopicExchange orderEventsExchange) {
+        log.info("RabbitMQ Inventory Binding created for queue: {} and exchange: {}\nRoutingKey = order.placed", inventoryQueue.getName(), orderEventsExchange.getName());
         return BindingBuilder.bind(inventoryQueue).to(orderEventsExchange).with("order.placed");
     }
 

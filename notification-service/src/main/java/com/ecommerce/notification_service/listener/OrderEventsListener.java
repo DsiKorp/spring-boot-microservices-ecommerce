@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 @Component
 @RequiredArgsConstructor
@@ -19,9 +20,9 @@ public class OrderEventsListener {
     private final JavaMailSender mailSender;
 
     @RabbitListener(queues = "notification-queue")
-    public void handleOrderPlacedEvent(OrderPlacedEvent orderPlacedEvent) {
-        log.info("OrderPlacedEvent received: {}", orderPlacedEvent);
-        log.info("Event received in Notification for order received: {}", orderPlacedEvent.orderNumber());
+    public void handleOrderConfirmedEvent(OrderPlacedEvent orderPlacedEvent) {
+        log.info("OrderPlacedEvent confirmed: {}", orderPlacedEvent);
+        log.info("Event received in Notification for order confirmed: {}", orderPlacedEvent.orderNumber());
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("orders@dsklabs.com");
@@ -31,7 +32,7 @@ public class OrderEventsListener {
         StringBuilder emailBody = new StringBuilder();
         emailBody.append("🎉 Thank you for your purchase!\n\n");
         emailBody.append("Dear Customer,\n\n");
-        emailBody.append("We are pleased to confirm that your order has been received successfully.\n\n");
+        emailBody.append("We are pleased to inform you that your order has been received and successfully confirmed.\n\n");
         emailBody.append("📦 Order Number: ").append(orderPlacedEvent.orderNumber()).append("\n\n");
         emailBody.append("═══════════════════════════════════════\n");
         emailBody.append("           🛒 ORDER DETAILS\n");
@@ -39,6 +40,7 @@ public class OrderEventsListener {
 
         BigDecimal orderTotal = BigDecimal.ZERO;
         int itemNumber = 1;
+        DecimalFormat df = new DecimalFormat("#,##0.00");
 
         for (var item : orderPlacedEvent.items()) {
             BigDecimal price = new BigDecimal(item.price());
@@ -47,12 +49,12 @@ public class OrderEventsListener {
 
             emailBody.append(String.format("  ✨ Item #%d: %s\n", itemNumber++, item.sku()));
             emailBody.append(String.format("     📦 Quantity: %d\n", item.quantity()));
-            emailBody.append(String.format("     💰 Unit Price: $%s\n", item.price()));
-            emailBody.append(String.format("     💵 Subtotal: $%s\n\n", subtotal));
+            emailBody.append(String.format("     💰 Unit Price: $%s\n", df.format(price)));
+            emailBody.append(String.format("     💵 Subtotal: $%s\n\n", df.format(subtotal)));
         }
 
         emailBody.append("═══════════════════════════════════════\n");
-        emailBody.append(String.format("  💳 TOTAL AMOUNT: $%s\n", orderTotal));
+        emailBody.append(String.format("  💳 TOTAL AMOUNT: $%s\n", df.format(orderTotal)));
         emailBody.append("═══════════════════════════════════════\n\n");
         emailBody.append("📮 We will keep you updated on your shipping status.\n\n");
         emailBody.append("If you have any questions, please do not hesitate to contact us.\n\n");

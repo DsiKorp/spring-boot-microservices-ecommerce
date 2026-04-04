@@ -4,4 +4,7 @@ spring:
   config:
     import: optional:configserver:${SERVER_URL_CONFIG_SERVER}/
 
-# docker exec -it order-db-postgres psql -U admin -d order_db
+# docker exec -it order-db-postgres psql -U admin -d order-db
+# DROP TABLE order_line_items;
+# DROP TABLE orders;
+# ./mvnw clean install -DskipTests

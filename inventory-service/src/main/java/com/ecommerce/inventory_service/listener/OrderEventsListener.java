@@ -17,10 +17,11 @@ public class OrderEventsListener {
     private final InventoryService inventoryService;
     private final RabbitTemplate rabbitTemplate;
 
+    // Escucha la queue "inventory-queue" creada en RabbitMQConfig
     @RabbitListener(queues = "inventory-queue")
     public void handleOrderPlacedEvent(OrderPlacedEvent orderPlacedEvent) {
-        log.info("OrderPlacedEvent received: {}", orderPlacedEvent);
-        log.info("Event received in Inventory for order: {}", orderPlacedEvent.orderNumber());
+        log.info("RabbitMQ OrderPlacedEvent received: {}", orderPlacedEvent);
+        log.info("RabbitMQ Event received in Inventory for order: {}", orderPlacedEvent.orderNumber());
 
             try {
                 boolean allProductsInStock = orderPlacedEvent.items().stream()
@@ -36,6 +37,7 @@ public class OrderEventsListener {
                     log.info("Stock reduced for SKU: {} by {}", item.sku(), item.quantity());
                 });
 
+                // lo publicamos en el Routing key	 "order.placed" en rabbit, no a la cola
                 rabbitTemplate.convertAndSend("order-events", "order.confirmed", orderPlacedEvent);
 
 

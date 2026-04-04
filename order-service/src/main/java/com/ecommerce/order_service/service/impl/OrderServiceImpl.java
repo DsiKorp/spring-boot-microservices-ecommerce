@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 //import java.util.concurrent.CompletableFuture;
 
@@ -66,7 +67,6 @@ public class OrderServiceImpl implements OrderService {
     //@TimeLimiter(name = "inventory")
     public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
 
-
             if (!ordersEnabled) {
                 log.warn("Order rejected: Service disabled by configuration");
                 throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
@@ -101,6 +101,7 @@ public class OrderServiceImpl implements OrderService {
             Order savedOrder = orderRepository.save(order);
             log.info("Order saved successfully. ID: {}", savedOrder.getId());
 
+            // Crea y Envia el evento a RabbitMQ
             List<OrderPlacedEvent.OrderItemEvent> orderItemsEvents =
                     order.getOrderLineItemsList().stream()
                             .map(item -> new OrderPlacedEvent.OrderItemEvent(
@@ -111,6 +112,7 @@ public class OrderServiceImpl implements OrderService {
                     savedOrder.getOrderNumber(), orderRequest.getEmail(), orderItemsEvents
             );
 
+            // lo publicamos en el Routing key	 "order.placed" en rabbit, no a la cola
             rabbitTemplate.convertAndSend("order-events", "order.placed", orderPlacedEvent);
             log.info("Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
 
@@ -241,5 +243,20 @@ public class OrderServiceImpl implements OrderService {
         }
         orderRepository.deleteById(id);
         log.info("Order removed. ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void updateOrderStatus(String orderNumber, OrderStatus newStatus) {
+        log.info("🔄 Actualizando base de datos: Orden {} -> {}", orderNumber, newStatus);
+
+        orderRepository.findByOrderNumber(orderNumber).ifPresentOrElse(
+                order -> {
+                    order.setStatus(newStatus);
+                    orderRepository.save(order);
+                    log.info("✅ Estado actualizado en DB para la orden: {} \uD83D\uDCE1", orderNumber);
+                },
+                () -> log.error("❌ No se encontró la orden {} para actualizar", orderNumber)
+        );
     }
 }
