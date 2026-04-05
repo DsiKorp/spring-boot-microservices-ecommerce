@@ -1,0 +1,161 @@
+Desde postman post http://localhost:9000/api/v1/order, estoy creando un pedido con el siguiente body de order-service:
+{
+    "email": "jcdelgadop76@gmail.com",
+    "orderLineItemsList": [
+        {
+            "sku": "iphone_15",
+            "price": 1200.50,
+            "quantity": 1000
+        },
+        {
+            "sku": "ps5_pro",
+            "price":750.50,
+            "quantity": 3
+        },
+        {
+            "sku": "xperia_z21",
+            "price":2000.3,
+            "quantity": 3
+        }
+    ]
+}
+
+El pedido queda en un estado inicial de "status": "PLACED" y al final del método placeOrder de order-service
+de la clase OrderServiceImpl.java se ejecuta
+rabbitTemplate.convertAndSend("order-events", "order.placed", orderPlacedEvent); en OrderServiceImpl.java lo que inicia
+la comunicación asíncrona con RabbitMQ.
+
+Luego en inventory-service en OrderEventsListener, se ejecuta el método handleOrderPlacedEvent el cual verifica
+que todos los productos estén disponibles allProductsInStock y si es asi se actualiza el stock y publica
+rabbitTemplate.convertAndSend("order-events", "order.confirmed", orderPlacedEvent);,
+si no hay suficiente stock se ejecuta cancelOrder(orderPlacedEvent, "Not enough stock for all items");
+lo cual publica rabbitTemplate.convertAndSend("order-events", "order.cancelled", orderCancelledEvent);
+
+En notification-service se ejecuta el método handleOrderConfirmedEvent cuando hay suficiente stock para cubrir la orden
+y se envía un correo electrónico a la direccion de email del cliente que registro en la orden.
+Si no hay suficiente stock para cubrir el pedido se ejecuta handleOrderCancelledEvent y envia un correo con la cancelación de la orden.
+
+Este es el estado final de la orden en la base de datos:
+
+    {
+        "id": 6,
+        "orderNumber": "8b3d4345-e935-42d9-8838-a98dd4ea0149",
+        "status": "CANCELLED",
+        "orderLineItemsList": [
+            {
+                "id": 16,
+                "sku": "iphone_15",
+                "price": 1200.50,
+                "quantity": 1000
+            },
+            {
+                "id": 17,
+                "sku": "ps5_pro",
+                "price": 750.50,
+                "quantity": 3
+            },
+            {
+                "id": 18,
+                "sku": "xperia_z21",
+                "price": 2000.30,
+                "quantity": 3
+            }
+        ]
+    }
+
+El problema que tengo actualmente es que cuando envio una compra de 1000 unidades de iphone_15, el no alcanza y deberia llegar
+el correo de cancelación de la orden.  Actualmente me esta saliendo este error:
+
+2026-04-05T15:20:59.143-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : OrderConfirmedEvent confirmed: OrderConfirmedEvent[orderNumber=8b3d4345-e935-42d9-8838-a98dd4ea0149, email=jcdelgadop76@gmail.com, items=null]
+2026-04-05T15:20:59.146-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : Event received in Notification for order confirmed: 8b3d4345-e935-42d9-8838-a98dd4ea0149
+2026-04-05T15:21:02.154-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : OrderConfirmedEvent confirmed: OrderConfirmedEvent[orderNumber=8b3d4345-e935-42d9-8838-a98dd4ea0149, email=jcdelgadop76@gmail.com, items=null]
+2026-04-05T15:21:02.155-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : Event received in Notification for order confirmed: 8b3d4345-e935-42d9-8838-a98dd4ea0149
+2026-04-05T15:21:08.158-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : OrderConfirmedEvent confirmed: OrderConfirmedEvent[orderNumber=8b3d4345-e935-42d9-8838-a98dd4ea0149, email=jcdelgadop76@gmail.com, items=null]
+2026-04-05T15:21:08.158-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : Event received in Notification for order confirmed: 8b3d4345-e935-42d9-8838-a98dd4ea0149
+2026-04-05T15:21:18.160-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : OrderConfirmedEvent confirmed: OrderConfirmedEvent[orderNumber=8b3d4345-e935-42d9-8838-a98dd4ea0149, email=jcdelgadop76@gmail.com, items=null]
+2026-04-05T15:21:18.161-05:00  INFO 202419 --- [notification-service] [ntContainer#0-1] c.e.n.listener.OrderEventsListener       : Event received in Notification for order confirmed: 8b3d4345-e935-42d9-8838-a98dd4ea0149
+2026-04-05T15:21:18.169-05:00  WARN 202419 --- [notification-service] [ntContainer#0-1] o.s.a.r.r.RejectAndDontRequeueRecoverer  : Retries exhausted for message (Body:'[B@227cb1e4(byte[129])' MessageProperties [headers={__TypeId__=com.ecommerce.inventory_service.event.OrderCancelledEvent}, contentType=application/json, contentEncoding=UTF-8, contentLength=0, receivedDeliveryMode=PERSISTENT, priority=0, redelivered=false, receivedExchange=order-events, receivedRoutingKey=order.cancelled, deliveryTag=1, consumerTag=amq.ctag-Er2NErt4deEDMr0_nZsMww, consumerQueue=notification-queue])
+
+org.springframework.amqp.rabbit.support.ListenerExecutionFailedException: Listener method 'public void com.ecommerce.notification_service.listener.OrderEventsListener.handleOrderConfirmedEvent(com.ecommerce.notification_service.event.OrderConfirmedEvent)' threw exception
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:296) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandlerAndProcessResult(MessagingMessageListenerAdapter.java:233) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.onMessage(MessagingMessageListenerAdapter.java:157) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:1683) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.actualInvokeListener(AbstractMessageListenerContainer.java:1612) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.core.retry.RetryTemplate.execute(RetryTemplate.java:174) ~[spring-core-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor.invoke(StatelessRetryOperationsInterceptor.java:57) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:222) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.$Proxy91.invokeListener(Unknown Source) ~[na:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:1599) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:1590) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1539) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListener(AbstractMessageListenerContainer.java:1520) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.doReceiveAndExecute(SimpleMessageListenerContainer.java:1116) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.receiveAndExecute(SimpleMessageListenerContainer.java:1061) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.mainLoop(SimpleMessageListenerContainer.java:1465) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1359) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: java.lang.NullPointerException: Cannot invoke "java.util.List.iterator()" because the return value of "com.ecommerce.notification_service.event.OrderConfirmedEvent.items()" is null
+	at com.ecommerce.notification_service.listener.OrderEventsListener.handleOrderConfirmedEvent(OrderEventsListener.java:46) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:168) ~[spring-messaging-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.adapter.KotlinAwareInvocableHandlerMethod.doInvoke(KotlinAwareInvocableHandlerMethod.java:47) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:119) ~[spring-messaging-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.adapter.HandlerAdapter.invoke(HandlerAdapter.java:83) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:287) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	... 23 common frames omitted
+
+2026-04-05T15:21:18.181-05:00  WARN 202419 --- [notification-service] [ntContainer#0-1] s.a.r.l.ConditionalRejectingErrorHandler : Execution of Rabbit message listener failed.
+
+org.springframework.amqp.rabbit.support.ListenerExecutionFailedException: Retry Policy Exhausted
+	at org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer.recover(RejectAndDontRequeueRecoverer.java:77) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptorFactoryBean.recover(StatelessRetryOperationsInterceptorFactoryBean.java:65) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor.invoke(StatelessRetryOperationsInterceptor.java:61) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:222) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.$Proxy91.invokeListener(Unknown Source) ~[na:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:1599) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:1590) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1539) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListener(AbstractMessageListenerContainer.java:1520) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.doReceiveAndExecute(SimpleMessageListenerContainer.java:1116) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.receiveAndExecute(SimpleMessageListenerContainer.java:1061) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.mainLoop(SimpleMessageListenerContainer.java:1465) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1359) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: org.springframework.amqp.AmqpRejectAndDontRequeueException
+	... 15 common frames omitted
+Caused by: org.springframework.amqp.rabbit.support.ListenerExecutionFailedException: Listener method 'public void com.ecommerce.notification_service.listener.OrderEventsListener.handleOrderConfirmedEvent(com.ecommerce.notification_service.event.OrderConfirmedEvent)' threw exception
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:296) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandlerAndProcessResult(MessagingMessageListenerAdapter.java:233) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.onMessage(MessagingMessageListenerAdapter.java:157) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:1683) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.actualInvokeListener(AbstractMessageListenerContainer.java:1612) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158) ~[spring-aop-7.0.6.jar:7.0.6]
+	at org.springframework.core.retry.RetryTemplate.execute(RetryTemplate.java:174) ~[spring-core-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor.invoke(StatelessRetryOperationsInterceptor.java:57) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	... 12 common frames omitted
+Caused by: java.lang.NullPointerException: Cannot invoke "java.util.List.iterator()" because the return value of "com.ecommerce.notification_service.event.OrderConfirmedEvent.items()" is null
+	at com.ecommerce.notification_service.listener.OrderEventsListener.handleOrderConfirmedEvent(OrderEventsListener.java:46) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:168) ~[spring-messaging-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.adapter.KotlinAwareInvocableHandlerMethod.doInvoke(KotlinAwareInvocableHandlerMethod.java:47) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:119) ~[spring-messaging-7.0.6.jar:7.0.6]
+	at org.springframework.amqp.rabbit.listener.adapter.HandlerAdapter.invoke(HandlerAdapter.java:83) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:287) ~[spring-rabbit-4.0.2.jar:4.0.2]
+	... 23 common frames omitted
+
+2026-04-05T15:23:56.907-05:00  INFO 202419 --- [notification-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+

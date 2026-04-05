@@ -20,8 +20,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue notificationQueue() {
-        return new Queue("notification-queue", true);
+    public Queue notificationConfirmedQueue() {
+        return new Queue("notification-confirmed-queue", true);
+    }
+
+    @Bean
+    public Queue notificationCancelledQueue() {
+        return new Queue("notification-cancelled-queue", true);
     }
 
     @Bean
@@ -30,13 +35,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding confirmedBinding(Queue notificationQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(notificationQueue).to(orderEventsExchange).with("order.confirmed");
+    public Binding confirmedBinding(Queue notificationConfirmedQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(notificationConfirmedQueue).to(orderEventsExchange).with("order.confirmed");
     }
 
     @Bean
-    public Binding cancelledBinding(Queue notificationQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(notificationQueue).to(orderEventsExchange).with("order.cancelled");
+    public Binding cancelledBinding(Queue notificationCancelledQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(notificationCancelledQueue).to(orderEventsExchange).with("order.cancelled");
     }
 
 

@@ -20,7 +20,7 @@ public class OrderEventsListener {
 
     private final JavaMailSender mailSender;
 
-    @RabbitListener(queues = "notification-queue")
+    @RabbitListener(queues = "notification-confirmed-queue")
     public void handleOrderConfirmedEvent(OrderConfirmedEvent orderConfirmedEvent) {
         log.info("OrderConfirmedEvent confirmed: {}", orderConfirmedEvent);
         log.info("Event received in Notification for order confirmed: {}", orderConfirmedEvent.orderNumber());
@@ -76,7 +76,7 @@ public class OrderEventsListener {
         }
     }
 
-    @RabbitListener(queues = "notification-queue")
+    @RabbitListener(queues = "notification-cancelled-queue")
     public void handleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent) {
         log.info("OrderCancelledEvent received: {}", orderCancelledEvent);
         log.info("Event received in Notification for order cancelled: {}", orderCancelledEvent.orderNumber());
