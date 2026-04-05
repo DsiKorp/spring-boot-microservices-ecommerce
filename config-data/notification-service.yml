@@ -6,6 +6,14 @@ spring:
     port: 5672
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3000ms # Primera espera de 3 segundos
+          max-attempts: 3          # Máximo 3 intentos totales
+          max-interval: 10000ms   # No esperar más de 10 segundos
+          multiplier: 2.0         # Backoff exponencial (3s, 6s, 10s)
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525
