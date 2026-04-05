@@ -37,7 +37,7 @@ public class OrderEventsListener {
                     log.info("Stock reduced for SKU: {} by {}", item.sku(), item.quantity());
                 });
 
-                // lo publicamos en el Routing key	 "order.placed" en rabbit, no a la cola
+                // lo publicamos en el Routing key	 "order.confirmed" en rabbit, no a la cola
                 rabbitTemplate.convertAndSend("order-events", "order.confirmed", orderPlacedEvent);
 
 

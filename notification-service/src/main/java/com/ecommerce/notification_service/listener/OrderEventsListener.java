@@ -6,12 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.mail.SimpleMailMessage;
-
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 
 @Component
 @RequiredArgsConstructor
@@ -24,6 +20,9 @@ public class OrderEventsListener {
     public void handleOrderConfirmedEvent(OrderConfirmedEvent orderConfirmedEvent) {
         log.info("OrderConfirmedEvent confirmed: {}", orderConfirmedEvent);
         log.info("Event received in Notification for order confirmed: {}", orderConfirmedEvent.orderNumber());
+
+        // For the retry pattern to work, it must not have a try catch.
+        //throw new RuntimeException("Simulating error: SMTP server not available");
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("orders@dsklabs.com");
@@ -68,12 +67,8 @@ public class OrderEventsListener {
 
         message.setText(emailBody.toString());
 
-        try {
-            mailSender.send(message);
-            log.info("✅ Email sent to: {} for Order {}", orderConfirmedEvent.email(), orderConfirmedEvent.orderNumber());
-        } catch (Exception e) {
-            log.error("❌ Error sending email to {}: {}", orderConfirmedEvent.email(), e.getMessage());
-        }
+        mailSender.send(message);
+        log.info("✅ Email sent to: {} for Order {}", orderConfirmedEvent.email(), orderConfirmedEvent.orderNumber());
     }
 
     @RabbitListener(queues = "notification-cancelled-queue")
@@ -81,38 +76,35 @@ public class OrderEventsListener {
         log.info("OrderCancelledEvent received: {}", orderCancelledEvent);
         log.info("Event received in Notification for order cancelled: {}", orderCancelledEvent.orderNumber());
 
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("orders@dsklabs.com");
-            message.setTo(orderCancelledEvent.email());
-            message.setSubject("Order Cancellation Confirmation: " + orderCancelledEvent.orderNumber());
+        //try {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("orders@dsklabs.com");
+        message.setTo(orderCancelledEvent.email());
+        message.setSubject("Order Cancellation Confirmation: " + orderCancelledEvent.orderNumber());
 
-            StringBuilder emailBody = new StringBuilder();
-            emailBody.append("📦 Order Cancellation Notice\n\n");
-            emailBody.append("Dear Customer,\n\n");
-            emailBody.append("We regret to inform you that your order has been cancelled.\n\n");
-            emailBody.append("═══════════════════════════════════════\n");
-            emailBody.append("           🚫 CANCELLATION DETAILS\n");
-            emailBody.append("═══════════════════════════════════════\n\n");
-            emailBody.append("📦 Order Number: ").append(orderCancelledEvent.orderNumber()).append("\n");
-            emailBody.append("📝 Reason: ").append(orderCancelledEvent.reason() != null ? orderCancelledEvent.reason() : "Not specified").append("\n\n");
-            emailBody.append("═══════════════════════════════════════\n\n");
-            emailBody.append("💰 If you have already been charged, a full refund will be processed within 3-5 business days.\n\n");
-            emailBody.append("We apologize for any inconvenience this may have caused.\n\n");
-            emailBody.append("If you have any questions or need further assistance, please contact our support team.\n\n");
-            emailBody.append("We hope to serve you again in the future.\n\n");
-            emailBody.append("Best regards,\n");
-            emailBody.append("═══════════════════════════════════════\n");
-            emailBody.append("  🏢 DskLabs - Your Trusted Store\n");
-            emailBody.append("  📧 support@dsklabs.com\n");
-            emailBody.append("═══════════════════════════════════════\n");
+        StringBuilder emailBody = new StringBuilder();
+        emailBody.append("📦 Order Cancellation Notice\n\n");
+        emailBody.append("Dear Customer,\n\n");
+        emailBody.append("We regret to inform you that your order has been cancelled.\n\n");
+        emailBody.append("═══════════════════════════════════════\n");
+        emailBody.append("           🚫 CANCELLATION DETAILS\n");
+        emailBody.append("═══════════════════════════════════════\n\n");
+        emailBody.append("📦 Order Number: ").append(orderCancelledEvent.orderNumber()).append("\n");
+        emailBody.append("📝 Reason: ").append(orderCancelledEvent.reason() != null ? orderCancelledEvent.reason() : "Not specified").append("\n\n");
+        emailBody.append("═══════════════════════════════════════\n\n");
+        emailBody.append("💰 If you have already been charged, a full refund will be processed within 3-5 business days.\n\n");
+        emailBody.append("We apologize for any inconvenience this may have caused.\n\n");
+        emailBody.append("If you have any questions or need further assistance, please contact our support team.\n\n");
+        emailBody.append("We hope to serve you again in the future.\n\n");
+        emailBody.append("Best regards,\n");
+        emailBody.append("═══════════════════════════════════════\n");
+        emailBody.append("  🏢 DskLabs - Your Trusted Store\n");
+        emailBody.append("  📧 support@dsklabs.com\n");
+        emailBody.append("═══════════════════════════════════════\n");
 
-            message.setText(emailBody.toString());
+        message.setText(emailBody.toString());
 
-            mailSender.send(message);
-            log.info("✅ Cancellation email sent to: {} for Order {}", orderCancelledEvent.email(), orderCancelledEvent.orderNumber());
-        } catch (Exception e) {
-            log.error("❌ Error sending cancellation email to {}: {}", orderCancelledEvent.email(), e.getMessage());
-        }
+        mailSender.send(message);
+        log.info("✅ Cancellation email sent to: {} for Order {}", orderCancelledEvent.email(), orderCancelledEvent.orderNumber());
     }
 }
