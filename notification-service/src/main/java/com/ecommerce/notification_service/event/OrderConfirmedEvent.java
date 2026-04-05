@@ -1,10 +1,15 @@
 package com.ecommerce.notification_service.event;
 
-import lombok.Builder;
+import java.util.List;
 
-@Builder
 public record OrderConfirmedEvent(
         String orderNumber,
-        String email
+        String email,
+        List<OrderItemEvent> items
 ) {
+    public record OrderItemEvent(
+            String sku,
+            String price,
+            Integer quantity
+    ) {}
 }

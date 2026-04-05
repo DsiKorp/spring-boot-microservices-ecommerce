@@ -1,6 +1,7 @@
 package com.ecommerce.notification_service.listener;
 
-import com.ecommerce.notification_service.event.OrderPlacedEvent;
+import com.ecommerce.notification_service.event.OrderCancelledEvent;
+import com.ecommerce.notification_service.event.OrderConfirmedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -20,20 +21,20 @@ public class OrderEventsListener {
     private final JavaMailSender mailSender;
 
     @RabbitListener(queues = "notification-queue")
-    public void handleOrderConfirmedEvent(OrderPlacedEvent orderPlacedEvent) {
-        log.info("OrderPlacedEvent confirmed: {}", orderPlacedEvent);
-        log.info("Event received in Notification for order confirmed: {}", orderPlacedEvent.orderNumber());
+    public void handleOrderConfirmedEvent(OrderConfirmedEvent orderConfirmedEvent) {
+        log.info("OrderConfirmedEvent confirmed: {}", orderConfirmedEvent);
+        log.info("Event received in Notification for order confirmed: {}", orderConfirmedEvent.orderNumber());
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("orders@dsklabs.com");
-        message.setTo(orderPlacedEvent.email());
-        message.setSubject("Order Confirmation: " + orderPlacedEvent.orderNumber());
+        message.setTo(orderConfirmedEvent.email());
+        message.setSubject("Order Confirmation: " + orderConfirmedEvent.orderNumber());
 
         StringBuilder emailBody = new StringBuilder();
         emailBody.append("🎉 Thank you for your purchase!\n\n");
         emailBody.append("Dear Customer,\n\n");
         emailBody.append("We are pleased to inform you that your order has been received and successfully confirmed.\n\n");
-        emailBody.append("📦 Order Number: ").append(orderPlacedEvent.orderNumber()).append("\n\n");
+        emailBody.append("📦 Order Number: ").append(orderConfirmedEvent.orderNumber()).append("\n\n");
         emailBody.append("═══════════════════════════════════════\n");
         emailBody.append("           🛒 ORDER DETAILS\n");
         emailBody.append("═══════════════════════════════════════\n\n");
@@ -42,7 +43,7 @@ public class OrderEventsListener {
         int itemNumber = 1;
         DecimalFormat df = new DecimalFormat("#,##0.00");
 
-        for (var item : orderPlacedEvent.items()) {
+        for (var item : orderConfirmedEvent.items()) {
             BigDecimal price = new BigDecimal(item.price());
             BigDecimal subtotal = price.multiply(BigDecimal.valueOf(item.quantity()));
             orderTotal = orderTotal.add(subtotal);
@@ -69,9 +70,49 @@ public class OrderEventsListener {
 
         try {
             mailSender.send(message);
-            log.info("✅\u200B Email sent to: {} for Order {}", orderPlacedEvent.email(), orderPlacedEvent.orderNumber());
+            log.info("✅ Email sent to: {} for Order {}", orderConfirmedEvent.email(), orderConfirmedEvent.orderNumber());
         } catch (Exception e) {
-            log.error("❌\u200B Error sending email to {}: {}", orderPlacedEvent.email(), e.getMessage());
+            log.error("❌ Error sending email to {}: {}", orderConfirmedEvent.email(), e.getMessage());
+        }
+    }
+
+    @RabbitListener(queues = "notification-queue")
+    public void handleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent) {
+        log.info("OrderCancelledEvent received: {}", orderCancelledEvent);
+        log.info("Event received in Notification for order cancelled: {}", orderCancelledEvent.orderNumber());
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("orders@dsklabs.com");
+            message.setTo(orderCancelledEvent.email());
+            message.setSubject("Order Cancellation Confirmation: " + orderCancelledEvent.orderNumber());
+
+            StringBuilder emailBody = new StringBuilder();
+            emailBody.append("📦 Order Cancellation Notice\n\n");
+            emailBody.append("Dear Customer,\n\n");
+            emailBody.append("We regret to inform you that your order has been cancelled.\n\n");
+            emailBody.append("═══════════════════════════════════════\n");
+            emailBody.append("           🚫 CANCELLATION DETAILS\n");
+            emailBody.append("═══════════════════════════════════════\n\n");
+            emailBody.append("📦 Order Number: ").append(orderCancelledEvent.orderNumber()).append("\n");
+            emailBody.append("📝 Reason: ").append(orderCancelledEvent.reason() != null ? orderCancelledEvent.reason() : "Not specified").append("\n\n");
+            emailBody.append("═══════════════════════════════════════\n\n");
+            emailBody.append("💰 If you have already been charged, a full refund will be processed within 3-5 business days.\n\n");
+            emailBody.append("We apologize for any inconvenience this may have caused.\n\n");
+            emailBody.append("If you have any questions or need further assistance, please contact our support team.\n\n");
+            emailBody.append("We hope to serve you again in the future.\n\n");
+            emailBody.append("Best regards,\n");
+            emailBody.append("═══════════════════════════════════════\n");
+            emailBody.append("  🏢 DskLabs - Your Trusted Store\n");
+            emailBody.append("  📧 support@dsklabs.com\n");
+            emailBody.append("═══════════════════════════════════════\n");
+
+            message.setText(emailBody.toString());
+
+            mailSender.send(message);
+            log.info("✅ Cancellation email sent to: {} for Order {}", orderCancelledEvent.email(), orderCancelledEvent.orderNumber());
+        } catch (Exception e) {
+            log.error("❌ Error sending cancellation email to {}: {}", orderCancelledEvent.email(), e.getMessage());
         }
     }
 }

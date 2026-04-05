@@ -30,8 +30,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding binding(Queue notificationQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(notificationQueue).to(orderEventsExchange).with("order.placed");
+    public Binding confirmedBinding(Queue notificationQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(notificationQueue).to(orderEventsExchange).with("order.confirmed");
+    }
+
+    @Bean
+    public Binding cancelledBinding(Queue notificationQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(notificationQueue).to(orderEventsExchange).with("order.cancelled");
     }
 
 
