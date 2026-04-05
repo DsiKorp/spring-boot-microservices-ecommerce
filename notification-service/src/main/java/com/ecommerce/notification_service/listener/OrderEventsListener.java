@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.format.DateTimeFormatter;
 
 @Component
 @RequiredArgsConstructor
@@ -37,6 +38,7 @@ public class OrderEventsListener {
         emailBody.append("Dear Customer,\n\n");
         emailBody.append("We are pleased to inform you that your order has been received and successfully confirmed.\n\n");
         emailBody.append("📦 Order Number: ").append(orderConfirmedEvent.orderNumber()).append("\n\n");
+        emailBody.append("📅 Order Date: ").append(orderConfirmedEvent.orderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n\n");
         emailBody.append("═══════════════════════════════════════\n");
         emailBody.append("           🛒 ORDER DETAILS\n");
         emailBody.append("═══════════════════════════════════════\n\n");
@@ -93,6 +95,7 @@ public class OrderEventsListener {
         emailBody.append("           🚫 CANCELLATION DETAILS\n");
         emailBody.append("═══════════════════════════════════════\n\n");
         emailBody.append("📦 Order Number: ").append(orderCancelledEvent.orderNumber()).append("\n");
+        emailBody.append("📅 Order Date: ").append(orderCancelledEvent.orderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("\n");
         emailBody.append("📝 Reason: ").append(orderCancelledEvent.reason() != null ? orderCancelledEvent.reason() : "Not specified").append("\n\n");
         emailBody.append("═══════════════════════════════════════\n\n");
         emailBody.append("💰 If you have already been charged, a full refund will be processed within 3-5 business days.\n\n");

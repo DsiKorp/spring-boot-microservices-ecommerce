@@ -1,11 +1,13 @@
 package com.ecommerce.order_service.event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // Alta cohesión y atomicidad
 public record OrderPlacedEvent(
         String orderNumber,
         String email,
+        LocalDateTime orderDate,
         List<OrderItemEvent> items
 ) {
     public record OrderItemEvent(
@@ -24,7 +26,7 @@ public record OrderPlacedEvent(
 
         // 2. Crear el evento principal con la lista de items
         var evento = new OrderPlacedEvent("ORD-12345", "jota@test.com",
-                List.of(item1, item2));
+                LocalDateTime.now(), List.of(item1, item2));
 
         // 3. Imprimir (Los records tienen un toString() hermoso por defecto)
         System.out.println("--- EVENTO CREADO ---");

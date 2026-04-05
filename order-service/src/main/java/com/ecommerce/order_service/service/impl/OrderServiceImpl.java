@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 //import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -83,6 +84,7 @@ public class OrderServiceImpl implements OrderService {
             Order order = new Order();
             order.setOrderNumber(UUID.randomUUID().toString());
             order.setStatus(OrderStatus.PLACED);
+            order.setOrderDate(LocalDateTime.now());
             order.setOrderLineItemsList(orderLineItems);
             order.setUserId(userId);
 
@@ -109,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
                             )).toList();
 
             OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(
-                    savedOrder.getOrderNumber(), orderRequest.getEmail(), orderItemsEvents
+                    savedOrder.getOrderNumber(), orderRequest.getEmail(), savedOrder.getOrderDate(), orderItemsEvents
             );
 
             // lo publicamos en el Routing key	 "order.placed" en rabbit, no a la cola

@@ -17,6 +17,9 @@ public interface OrderMapper {
     // @Mapping(source = "orderLineItemsDtoList", target = "orderLineItemsList")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "orderNumber", ignore = true)
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "orderDate", ignore = true)
     Order toOrder(OrderRequest orderRequest);
 
     // Método auxiliar (MapStruct lo usa automáticamente para convertir cada ítem de

@@ -1,10 +1,12 @@
 package com.ecommerce.inventory_service.event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record OrderPlacedEvent(
         String orderNumber,
         String email,
+        LocalDateTime orderDate,
         List<OrderItemEvent> items
 ) {
     public record OrderItemEvent(
