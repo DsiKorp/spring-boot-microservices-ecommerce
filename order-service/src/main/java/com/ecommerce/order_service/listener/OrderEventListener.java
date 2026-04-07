@@ -1,6 +1,7 @@
 package com.ecommerce.order_service.listener;
 
-import com.ecommerce.order_service.event.OrderPlacedEvent;
+import com.ecommerce.order_service.event.OrderCancelledEvent;
+import com.ecommerce.order_service.event.OrderConfirmedEvent;
 import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +17,23 @@ public class OrderEventListener {
     private final OrderService orderService;
 
     @RabbitListener(queues = "order-confirmed-queue")
-    public void handleOrderConfirmed(OrderPlacedEvent orderPlacedEvent) {
-        orderService.updateOrderStatus(orderPlacedEvent.orderNumber(), OrderStatus.CONFIRMED);
+    public void handleOrderConfirmed(OrderConfirmedEvent event) {
+
+        if (event.orderNumber() == null) {
+            log.error("OrderConfirmedEvent number is null");
+            return;
+        }
+
+        orderService.updateOrderStatus(event.orderNumber(), OrderStatus.CONFIRMED);
     }
 
     @RabbitListener(queues = "order-cancelled-queue")
-    public void handleOrderCancelled(OrderPlacedEvent orderPlacedEvent) {
-        orderService.updateOrderStatus(orderPlacedEvent.orderNumber(), OrderStatus.CANCELLED);
+    public void handleOrderCancelled(OrderCancelledEvent event) {
+        if (event.orderNumber() == null) {
+            log.error("Order OrderCancelledEvent number is null");
+            return;
+        }
+
+        orderService.updateOrderStatus(event.orderNumber(), OrderStatus.CANCELLED);
     }
 }

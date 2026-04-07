@@ -40,7 +40,6 @@ public class OrderEventsListener {
                 log.info("Stock reduced for SKU: {} by {}", item.sku(), item.quantity());
             });
 
-            // lo publicamos en el Routing key "order.confirmed" en rabbit, no a la cola
             List<OrderConfirmedEvent.OrderItemEvent> confirmedItems = orderPlacedEvent.items().stream()
                     .map(item -> new OrderConfirmedEvent.OrderItemEvent(item.sku(), item.price(), item.quantity()))
                     .toList();
@@ -52,6 +51,7 @@ public class OrderEventsListener {
                     .items(confirmedItems)
                     .build();
 
+            // lo publicamos en el Routing key "order.confirmed" en rabbit, no a la cola
             rabbitTemplate.convertAndSend("order-events", "order.confirmed", orderConfirmedEvent);
 
 

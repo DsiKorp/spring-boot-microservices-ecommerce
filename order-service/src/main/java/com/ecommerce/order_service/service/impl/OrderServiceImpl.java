@@ -10,24 +10,22 @@ import com.ecommerce.order_service.model.OrderLineItems;
 import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.service.OrderService;
-import com.ecommerce.order_service.service.client.InventoryClient;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-//import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import com.ecommerce.order_service.service.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-//import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+
+//import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+//import org.springframework.web.reactive.function.client.WebClient;
 //import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -41,8 +39,9 @@ public class OrderServiceImpl implements OrderService {
     //private final WebClient.Builder webClientBuilder;
     //private final InventoryClient inventoryClient;
     private final RabbitTemplate rabbitTemplate;
+    private final OutboxService outboxService;
 
-    @Value( "${orders.enabled:true}")
+    @Value("${orders.enabled:true}")
     private boolean ordersEnabled;
 
     // CompletableFuture crea asincronismo para ejecutar en un hilo separado
@@ -55,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
 //        });
 //    }
 
-    public  OrderResponse placeOrderFallback(OrderRequest orderRequest, String userId, Throwable throwable) {
+    public OrderResponse placeOrderFallback(OrderRequest orderRequest, String userId, Throwable throwable) {
         log.error("\uD83D\uDD34 Circuit Breaker activated. Cause: {}", throwable.getMessage());
         //return new OrderResponse(0L, "00000", Collections.emptyList());
         throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
@@ -68,27 +67,27 @@ public class OrderServiceImpl implements OrderService {
     //@TimeLimiter(name = "inventory")
     public OrderResponse placeOrder(OrderRequest orderRequest, String userId) {
 
-            if (!ordersEnabled) {
-                log.warn("Order rejected: Service disabled by configuration");
-                throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
-            }
+        if (!ordersEnabled) {
+            log.warn("Order rejected: Service disabled by configuration");
+            throw new RuntimeException("The ordering service is currently undergoing maintenance. Please try again later.");
+        }
 
-            log.info("Placing new order...");
+        log.info("Placing new order...");
 
-            // Mapeo manual de items para asegurar la lista
-            List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsList()
-                    .stream()
-                    .map(orderMapper::toOrderLineItems)
-                    .toList();
+        // Mapeo manual de items para asegurar la lista
+        List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsList()
+                .stream()
+                .map(orderMapper::toOrderLineItems)
+                .toList();
 
-            Order order = new Order();
-            order.setOrderNumber(UUID.randomUUID().toString());
-            order.setStatus(OrderStatus.PLACED);
-            order.setOrderDate(LocalDateTime.now());
-            order.setOrderLineItemsList(orderLineItems);
-            order.setUserId(userId);
+        Order order = new Order();
+        order.setOrderNumber(UUID.randomUUID().toString());
+        order.setStatus(OrderStatus.PLACED);
+        order.setOrderDate(LocalDateTime.now());
+        order.setOrderLineItemsList(orderLineItems);
+        order.setUserId(userId);
 
-            // se quito por uso de RabbitMQ
+        // se quito por uso de RabbitMQ
 //            for (var orderItem : order.getOrderLineItemsList()) {
 //                try {
 //                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
@@ -99,26 +98,35 @@ public class OrderServiceImpl implements OrderService {
 //                }
 //            }
 
-            // Guardamos y capturamos la entidad persistida
-            Order savedOrder = orderRepository.save(order);
-            log.info("Order saved successfully. ID: {}", savedOrder.getId());
+        // Guardamos y capturamos la entidad persistida
+        Order savedOrder = orderRepository.save(order);
+        log.info("Order saved successfully. ID: {}", savedOrder.getId());
 
-            // Crea y Envia el evento a RabbitMQ
-            List<OrderPlacedEvent.OrderItemEvent> orderItemsEvents =
-                    order.getOrderLineItemsList().stream()
-                            .map(item -> new OrderPlacedEvent.OrderItemEvent(
-                                    item.getSku(), item.getPrice().toString(), item.getQuantity()
-                            )).toList();
+        // Crea y Envia el evento a RabbitMQ
+        List<OrderPlacedEvent.OrderItemEvent> orderItemsEvents =
+                order.getOrderLineItemsList().stream()
+                        .map(item -> new OrderPlacedEvent.OrderItemEvent(
+                                item.getSku(), item.getPrice().toString(), item.getQuantity()
+                        )).toList();
 
-            OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(
-                    savedOrder.getOrderNumber(), orderRequest.getEmail(), savedOrder.getOrderDate(), orderItemsEvents
-            );
+        OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(
+                savedOrder.getOrderNumber(), orderRequest.getEmail(), savedOrder.getOrderDate(), orderItemsEvents
+        );
 
+        boolean sentToRabbit = false;
+        try {
             // lo publicamos en el Routing key	 "order.placed" en rabbit, no a la cola
             rabbitTemplate.convertAndSend("order-events", "order.placed", orderPlacedEvent);
-            log.info("Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
+            sentToRabbit = true;
+            log.info("* Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
+        } catch (AmqpException e) {
+            log.error("* RabbitMQ error: {} . \nsigue Outbox", e.getMessage());
+        }
+        outboxService.saveOrderPlacedEvent(orderPlacedEvent, sentToRabbit);
 
-            return orderMapper.toOrderResponse(savedOrder);
+        log.info("Event sent to RabbitMQ for order: {}", savedOrder.getOrderNumber());
+
+        return orderMapper.toOrderResponse(savedOrder);
 
     }
 
@@ -169,16 +177,17 @@ public class OrderServiceImpl implements OrderService {
 ////            }
 //
 //                try {
-////                String reducerResponse = webClientBuilder.build()
-////                        .put()
-////                        .uri("http://localhost:8082/api/v1/inventory/reduce/" + orderItem.getSku(), uriBuilder -> uriBuilder
-////                                .queryParam("quantity", orderItem.getQuantity())
-////                                .build())
-////                        .retrieve() // retrieve para obtener la respuesta del servicio de inventario, como en postman
-////                        .bodyToMono(String.class) // bodyToMono para obtener un solo valor booleano
-////                        .block(); // block para esperar la respuesta de forma sincrónica
-////
-////                log.info("Inventory reduced for product {}: {}", orderItem.getSku(), reducerResponse);
+
+    /// /                String reducerResponse = webClientBuilder.build()
+    /// /                        .put()
+    /// /                        .uri("http://localhost:8082/api/v1/inventory/reduce/" + orderItem.getSku(), uriBuilder -> uriBuilder
+    /// /                                .queryParam("quantity", orderItem.getQuantity())
+    /// /                                .build())
+    /// /                        .retrieve() // retrieve para obtener la respuesta del servicio de inventario, como en postman
+    /// /                        .bodyToMono(String.class) // bodyToMono para obtener un solo valor booleano
+    /// /                        .block(); // block para esperar la respuesta de forma sincrónica
+    /// /
+    /// /                log.info("Inventory reduced for product {}: {}", orderItem.getSku(), reducerResponse);
 //
 //                    inventoryClient.reduceStock(orderItem.getSku(), orderItem.getQuantity());
 //
@@ -204,7 +213,6 @@ public class OrderServiceImpl implements OrderService {
 //            return orderMapper.toOrderResponse(savedOrder);
 //        });
 //    }
-
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
