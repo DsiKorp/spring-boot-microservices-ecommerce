@@ -16,11 +16,13 @@ import java.time.format.DateTimeFormatter;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+//@RabbitListener(queues = "notification-confirmed-queue")
 public class OrderEventsListener {
 
     private final JavaMailSender mailSender;
 
     @RabbitListener(queues = "notification-confirmed-queue")
+    // @RabbitHandler
     public void handleOrderConfirmedEvent(OrderConfirmedEvent orderConfirmedEvent) {
         log.info("OrderConfirmedEvent confirmed: {}", orderConfirmedEvent);
         log.info("Event received in Notification for order confirmed: {}", orderConfirmedEvent.orderNumber());
@@ -77,9 +79,13 @@ public class OrderEventsListener {
     }
 
     @RabbitListener(queues = "notification-cancelled-queue")
+    // @RabbitHandler
     public void handleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent) {
         log.info("OrderCancelledEvent received: {}", orderCancelledEvent);
         log.info("Event received in Notification for order cancelled: {}", orderCancelledEvent.orderNumber());
+
+        // For the retry pattern to work, it must not have a try catch.
+        //throw new RuntimeException("Simulating error: SMTP server not available");
 
         //try {
         SimpleMailMessage message = new SimpleMailMessage();
