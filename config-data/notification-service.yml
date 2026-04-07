@@ -28,6 +28,23 @@ spring:
           auth: true
           starttls:
             enable: true
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # Captura el 100% de las trazas para desarrollo
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/traces
+    logging:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/logs
+  otlp:
+    metrics:
+      export:
+        url: ${OPENTELEMETRY_OTLP_ENDPOINT}/metrics
 eureka:
   client:
     serviceUrl:
@@ -35,6 +52,9 @@ eureka:
     fetchRegistry: true
     registerWithEureka: true
 logging:
+  # ✅ CORRELACIÓN DE LOGS (TraceID y SpanID en consola de IntelliJ/Docker)
+  pattern:
+    level: "%5p [${spring.application.name:},%X{trace_id:-},%X{span_id:-}]"
   level:
     root: INFO
     com.ecommerce: INFO
