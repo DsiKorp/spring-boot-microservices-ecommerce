@@ -14,17 +14,17 @@ services:
       - mongo_data:/data/db  # <--- ¡Aquí salvamos los datos!
 
   # 2. Nuestra Aplicación (Product Service)
-#  product-service:
-#    build: .              # Usa el Dockerfile de la carpeta actual
-#    container_name: product-service
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      # Sobrescribimos la config de Spring para usar Docker
-#      # Fíjate: usamos 'mongodb' en lugar de 'localhost'
-#      - SPRING_DATA_MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:${MONGO_PORT}/${MONGO_DATABASE}?authSource=${MONGO_AUTH_DB}
-#    depends_on:
-#      - mongodb           # Espera a que la BD arranque primero
+  #  product-service:
+  #    build: .              # Usa el Dockerfile de la carpeta actual
+  #    container_name: product-service
+  #    ports:
+  #      - "8080:8080"
+  #    environment:
+  #      # Sobrescribimos la config de Spring para usar Docker
+  #      # Fíjate: usamos 'mongodb' en lugar de 'localhost'
+  #      - SPRING_DATA_MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:${MONGO_PORT}/${MONGO_DATABASE}?authSource=${MONGO_AUTH_DB}
+  #    depends_on:
+  #      - mongodb           # Espera a que la BD arranque primero
 
   #------------------ 3. Nuestra Aplicación (Inventory DB Mysql)
   inventory-db:
@@ -56,7 +56,7 @@ services:
     volumes:
       - order_data:/var/lib/postgresql/data
 
-#-------------------------- Authentication Service
+  #-------------------------- Authentication Service
   keycloak-db:
     image: postgres:17.1-alpine
     container_name: keycloak-postgres
@@ -69,11 +69,11 @@ services:
       - "5433:5432"
     volumes:
       - keycloak_data:/var/lib/postgresql/data
-#    healthcheck:
-#      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_LOGIN} -d ${POSTGRES_DB_LOGIN}"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
+  #    healthcheck:
+  #      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_LOGIN} -d ${POSTGRES_DB_LOGIN}"]
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 5
 
   #--------------------------  Keycloak
   keycloak:
@@ -107,6 +107,15 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq # <--- ¡La persistencia!
+  #--------------------------  grafana Opentelemetry
+  grafana-lgtm:
+    image: 'grafana/otel-lgtm:latest'
+    ports:
+      - '3000:3000'
+      - '4317:4317'
+      - '4318:4318'
+    environment:
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
 volumes:
   mongo_data:             # Declaramos el volumen persistente
   inventory_data:

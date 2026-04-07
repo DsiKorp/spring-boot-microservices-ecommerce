@@ -47,6 +47,34 @@ spring:
             uri: lb://inventory-service
             predicates:
               - Path=/api/v1/inventory/**
+# ✅ CONFIGURACIÓN DE OBSERVABILIDAD UNIFICADA (Traces, Logs y Metrics)
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # Captura el 100% de las trazas para la prueba
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/traces # Endpoint HTTP OTLP
+    logging:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/logs # Habilita el envío de logs a Grafana
+  otlp:
+    metrics:
+      export:
+        url: ${OPENTELEMETRY_OTLP_ENDPOINT}/metrics # Habilita el envío de métricas a Grafana
+  # actuator
+  endpoints:
+    web:
+      exposure:
+        include: "refresh, health, prometheus"
+
+# ✅ CORRELACIÓN DE LOGS EN CONSOLA (Para ver el TraceID localmente)
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{trace_id:-},%X{span_id:-}]" #
 eureka:
   client:
     serviceUrl:

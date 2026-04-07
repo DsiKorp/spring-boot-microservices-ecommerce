@@ -37,6 +37,23 @@ eureka:
 order:
   enabled: true
 management:
+  tracing:
+    sampling:
+      probability: 1.0  # Captura el 100% de las trazas para desarrollo
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/traces
+    logging:
+      export:
+        otlp:
+          endpoint: ${OPENTELEMETRY_OTLP_ENDPOINT}/logs
+  otlp:
+    metrics:
+      export:
+        url: ${OPENTELEMETRY_OTLP_ENDPOINT}/metrics
+  # actuator
   endpoint:
     health:
       show-details: always
@@ -47,7 +64,11 @@ management:
     web:
       exposure:
         # incluye endpoints por defecto
-        include: "refresh, health, circuitbreakers"
+        include: "refresh, health, circuitbreakers, prometheus"
+# ✅ CORRELACIÓN DE LOGS (TraceID y SpanID en consola de IntelliJ/Docker)
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{trace_id:-},%X{span_id:-}]"
 resilience4j:
   circuitbreaker:
     instances:
